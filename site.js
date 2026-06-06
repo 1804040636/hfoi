@@ -367,27 +367,54 @@ function renderSchools(rows, teamRows) {
   var input = document.getElementById("schoolSearchInput");
   var summary = document.getElementById("schoolsSummary");
   var tbody = document.getElementById("schoolsBody");
+  var pagination = document.getElementById("schoolsPagination");
   var tabGroup = document.getElementById("schoolTabGroupPage");
   if (!input || !summary || !tbody) return;
 
+  var PAGE_SIZE = 30;
   var all = buildSchoolStats(rows, teamRows);
   var currentLevel = "primary";
+  var currentList = [];
 
-  function paint(list) {
+  function paint(list, page) {
+    currentList = list;
+    if (!page || page < 1) page = 1;
+    var totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+    if (page > totalPages) page = totalPages;
+    var start = (page - 1) * PAGE_SIZE;
+    var end = Math.min(start + PAGE_SIZE, list.length);
+    var pageItems = list.slice(start, end);
+
     if (!list.length) {
       renderEmpty(tbody, 9, "No matched schools");
       summary.textContent = "Total 0 schools";
+      if (pagination) pagination.innerHTML = "";
       return;
     }
-    tbody.innerHTML = list.map(function(row, idx) {
-      return "<tr><td>" + (idx + 1) + "</td><td>" + escapeHtml(row.school) + "</td><td>" + row.teamFirst + "</td><td>" + row.teamSecond + "</td><td>" + row.teamThird + "</td><td>" + row.first + "</td><td>" + row.second + "</td><td>" + row.third + "</td><td>" + row.total + "</td></tr>";
+    tbody.innerHTML = pageItems.map(function(row, idx) {
+      var rank = start + idx + 1;
+      return "<tr><td>" + rank + "</td><td>" + escapeHtml(row.school) + "</td><td>" + row.teamFirst + "</td><td>" + row.teamSecond + "</td><td>" + row.teamThird + "</td><td>" + row.first + "</td><td>" + row.second + "</td><td>" + row.third + "</td><td>" + row.total + "</td></tr>";
     }).join("");
-    summary.textContent = "Total " + list.length + " schools";
+    summary.textContent = "第 " + page + " / " + totalPages + " 页 | 共 " + list.length + " 所学校";
+    if (pagination) {
+      var html = "";
+      if (page > 1) html += "<button class=\"page-btn\" data-page=\"" + (page - 1) + "\">上一页</button>";
+      for (var p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) {
+        html += "<button class=\"page-btn" + (p === page ? " active" : "") + "\" data-page=\"" + p + "\">" + p + "</button>";
+      }
+      if (page < totalPages) html += "<button class=\"page-btn\" data-page=\"" + (page + 1) + "\">下一页</button>";
+      pagination.innerHTML = html;
+      pagination.querySelectorAll(".page-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          paint(currentList, parseInt(this.getAttribute("data-page")));
+        });
+      });
+    }
   }
 
   function filterAndPaint(level) {
     currentLevel = level;
-    paint(all.filter(function(s) { return s.level === level; }));
+    paint(all.filter(function(s) { return s.level === level; }), 1);
   }
 
   if (tabGroup) {
@@ -404,13 +431,12 @@ function renderSchools(rows, teamRows) {
   function applyFilter() {
     var keyword = normalize(input.value);
     var base = all.filter(function(s) { return s.level === currentLevel; });
-    paint(keyword ? base.filter(function(row) { return normalize(row.school).indexOf(keyword) !== -1; }) : base);
+    paint(keyword ? base.filter(function(row) { return normalize(row.school).indexOf(keyword) !== -1; }) : base, 1);
   }
 
   input.addEventListener("input", applyFilter);
   filterAndPaint("primary");
 }
-
 // ===== Contests Page =====
 function renderContests(rows) {
   var input = document.getElementById("contestSearchInput");
