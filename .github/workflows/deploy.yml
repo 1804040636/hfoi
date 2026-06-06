@@ -1,4 +1,4 @@
-name: Deploy static site to GitHub Pages
+﻿name: Deploy static site to GitHub Pages
 
 on:
   push:
@@ -24,8 +24,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Pages
+      - name: Setup Pages (enable if not already enabled)
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
+          static_site_generator: "html"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
