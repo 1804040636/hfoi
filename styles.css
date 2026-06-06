@@ -607,8 +607,12 @@ input::placeholder {
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
-  padding: 1rem 0 0.3rem;
+  padding: 1rem 0 0.8rem;
   flex-wrap: wrap;
+  position: sticky;
+  bottom: 0;
+  background: hsl(var(--card));
+  z-index: 10;
 }
 
 .page-btn {
