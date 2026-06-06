@@ -25,7 +25,7 @@ function contestNameOf(row) {
 
 function setActiveNav() {
   const page = document.body.dataset.page;
-  const navKey = page === "contest-detail" ? "contests" : page === "player-detail" ? "players" : page;
+  const navKey = page === "contest-detail" ? "contests" : page === "player-detail" ? "players" : page === "school-detail" ? "schools" : page;
   document.querySelectorAll("[data-nav]").forEach((item) => {
     item.classList.toggle("active", item.dataset.nav === navKey);
   });
@@ -256,7 +256,7 @@ function renderHome(rows, teamRows, announcements) {
       return;
     }
     rankBody.innerHTML = list.map(function(row, idx) {
-      return '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(row.school) + '</td><td>' + row.teamFirst + '</td><td>' + row.teamSecond + '</td><td>' + row.teamThird + '</td><td>' + row.first + '</td><td>' + row.second + '</td><td>' + row.third + '</td><td>' + (row.first + row.second + row.third) + '</td></tr>';
+      return '<tr><td>' + (idx + 1) + '</td><td><a class="table-link" href="./hfoi-school-detail?school=' + encodeURIComponent(row.school) + '">' + escapeHtml(row.school) + '</a></td><td>' + row.teamFirst + '</td><td>' + row.teamSecond + '</td><td>' + row.teamThird + '</td><td>' + row.first + '</td><td>' + row.second + '</td><td>' + row.third + '</td><td>' + (row.first + row.second + row.third) + '</td></tr>';
     }).join("");
     if (summary) summary.textContent = "共 " + list.length + " 所学校";
   }
@@ -393,7 +393,7 @@ function renderSchools(rows, teamRows) {
     }
     tbody.innerHTML = pageItems.map(function(row, idx) {
       var rank = start + idx + 1;
-      return "<tr><td>" + rank + "</td><td>" + escapeHtml(row.school) + "</td><td>" + row.teamFirst + "</td><td>" + row.teamSecond + "</td><td>" + row.teamThird + "</td><td>" + row.first + "</td><td>" + row.second + "</td><td>" + row.third + "</td><td>" + row.total + "</td></tr>";
+      return "<tr><td>" + rank + "</td><td><a class=\"table-link\" href=\"./hfoi-school-detail?school=" + encodeURIComponent(row.school) + "\">" + escapeHtml(row.school) + "</a></td><td>" + row.teamFirst + "</td><td>" + row.teamSecond + "</td><td>" + row.teamThird + "</td><td>" + row.first + "</td><td>" + row.second + "</td><td>" + row.third + "</td><td>" + row.total + "</td></tr>";
     }).join("");
     summary.textContent = "第 " + page + " / " + totalPages + " 页 | 共 " + list.length + " 所学校";
     if (pagination) {
@@ -525,7 +525,7 @@ function renderContestDetail(rows, teamRows) {
       return;
     }
     tbody.innerHTML = list.map(function(row) {
-      return '<tr><td>' + escapeHtml(row.rank) + '</td><td>' + '<a class="table-link" href="./hfoi-player-detail?name=' + encodeURIComponent(row.name) + '&school=' + encodeURIComponent(row.school) + '">' + escapeHtml(row.name) + '</a></td><td>' + escapeHtml(row.school) + '</td><td>' + escapeHtml(row.award) + '</td><td>' + escapeHtml(row.year) + '</td></tr>';
+      return '<tr><td>' + escapeHtml(row.rank) + '</td><td>' + '<a class="table-link" href="./hfoi-player-detail?name=' + encodeURIComponent(row.name) + '&school=' + encodeURIComponent(row.school) + '">' + escapeHtml(row.name) + '</a></td><td>' + '<a class="table-link" href="./hfoi-school-detail?school=' + encodeURIComponent(row.school) + '">' + escapeHtml(row.school) + '</a></td><td>' + escapeHtml(row.award) + '</td><td>' + escapeHtml(row.year) + '</td></tr>';
     }).join("");
     summary.textContent = "共 " + list.length + " 条记录";
   }
@@ -586,7 +586,7 @@ function renderContestDetail(rows, teamRows) {
     }
 
     schoolTbody.innerHTML = schoolList.map(function(s, idx) {
-      return '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(s.school) + '</td><td>' + s.teamFirst + '</td><td>' + s.teamSecond + '</td><td>' + s.teamThird + '</td></tr>';
+      return '<tr><td>' + (idx + 1) + '</td><td><a class=\"table-link\" href=\"./hfoi-school-detail?school=' + encodeURIComponent(s.school) + '\">' + escapeHtml(s.school) + '</a></td><td>' + s.teamFirst + '</td><td>' + s.teamSecond + '</td><td>' + s.teamThird + '</td></tr>';
     }).join("");
     schoolSummary.textContent = "共 " + schoolList.length + " 所学校";
   }  // ===== Tab Switching =====
@@ -660,6 +660,101 @@ function renderPlayerDetail(rows) {
   }).join("");
   summary.textContent = "共 " + list.length + " 条记录";
 }
+// ===== School Detail =====
+function renderSchoolDetail(rows, teamRows) {
+  var title = document.getElementById("schoolDetailTitle");
+  var summary = document.getElementById("schoolDetailSummary");
+  var tbody = document.getElementById("schoolDetailBody");
+  var tabGroup = document.getElementById("schoolDetailTabGroup");
+  if (!title || !summary || !tbody) return;
+
+  var params = new URLSearchParams(window.location.search);
+  var school = String(params.get("school") || "").trim();
+
+  if (!school) {
+    renderEmpty(tbody, 7, "Missing school name");
+    summary.textContent = "请从学校列表进入";
+    return;
+  }
+
+  title.textContent = "学校详情: " + school;
+
+  var n = function(v) { return String(v || "").trim().toLowerCase(); };
+  var ns = n(school);
+  var list = rows.filter(function(row) { return n(row.school) === ns; });
+
+  if (!list.length) {
+    renderEmpty(tbody, 7, "暂无该学校记录");
+    summary.textContent = "共 0 场比赛";
+    return;
+  }
+
+  // Group by contest, count individual awards per contest
+  var contestMap = new Map();
+  list.forEach(function(row) {
+    var cname = contestNameOf(row);
+    if (!cname) return;
+    if (!contestMap.has(cname)) {
+      contestMap.set(cname, { contest: cname, teamFirst: 0, teamSecond: 0, teamThird: 0, first: 0, second: 0, third: 0 });
+    }
+    var item = contestMap.get(cname);
+    var lv = getAwardLevel(row.award);
+    if (lv === 1) item.first += 1;
+    if (lv === 2) item.second += 1;
+    if (lv === 3) item.third += 1;
+  });
+
+  // Cross-reference team awards from school_teams.json (match by contest + school)
+  contestMap.forEach(function(item, cname) {
+    if (teamRows && teamRows.length) {
+      var cn = normalize(item.contest);
+      teamRows.forEach(function(tr) {
+        var trContest = String(tr.contest || "");
+        if (normalize(trContest) === cn && normalize(String(tr.school || "")) === ns) {
+          item.teamFirst = Number(tr.teamFirst || 0);
+          item.teamSecond = Number(tr.teamSecond || 0);
+          item.teamThird = Number(tr.teamThird || 0);
+        }
+      });
+    }
+  });
+
+  var contestList = [...contestMap.values()].sort(function(a, b) {
+    return a.contest.localeCompare(b.contest, "zh-CN");
+  });
+
+  var currentTab = "all";
+
+  function paint() {
+    var filtered = currentTab === "all" ? contestList : contestList.filter(function(item) {
+      return currentTab === "primary" ? item.contest.indexOf("小学") >= 0 : item.contest.indexOf("初中") >= 0;
+    });
+    if (!filtered.length) {
+      renderEmpty(tbody, 7, "暂无比赛数据");
+      summary.textContent = "共 0 场比赛";
+      return;
+    }
+    tbody.innerHTML = filtered.map(function(item) {
+      var cname = item.contest;
+      var contestLink = '<a class="table-link" href="./hfoi-contest-detail?name=' + encodeURIComponent(cname) + '">' + escapeHtml(cname) + '</a>';
+      return '<tr><td>' + contestLink + '</td><td>' + item.teamFirst + '</td><td>' + item.teamSecond + '</td><td>' + item.teamThird + '</td><td>' + item.first + '</td><td>' + item.second + '</td><td>' + item.third + '</td></tr>';
+    }).join("");
+    summary.textContent = "共 " + filtered.length + " 场比赛";
+  }
+
+  if (tabGroup) {
+    tabGroup.querySelectorAll(".tab-btn").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        tabGroup.querySelectorAll(".tab-btn").forEach(function(b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        currentTab = btn.getAttribute("data-tab");
+        paint();
+      });
+    });
+  }
+
+  paint();
+}
 
 // ===== Init =====
 async function init() {
@@ -675,7 +770,7 @@ async function init() {
     if (page === "players") renderPlayers(rows);
     if (page === "schools") renderSchools(rows, teamRows);
     if (page === "contests") renderContests(rows);
-    if (page === "contest-detail") renderContestDetail(rows, teamRows); if (page === "player-detail") renderPlayerDetail(rows);
+    if (page === "contest-detail") renderContestDetail(rows, teamRows); if (page === "player-detail") renderPlayerDetail(rows); if (page === "school-detail") renderSchoolDetail(rows, teamRows);
   } catch (error) {
     console.error(error);
     document.querySelectorAll("tbody").forEach(function(tbody) { renderEmpty(tbody, 10, "数据加载失败"); });
