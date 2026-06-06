@@ -1,0 +1,59 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HFOI - 公告详情</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .detail-content { line-height: 1.8; font-size: 0.95rem; }
+      .detail-content p { margin: 0.6rem 0; }
+      .detail-content a { color: hsl(var(--link)); text-decoration: underline; }
+      .detail-meta { color: hsl(var(--muted-foreground)); font-size: 0.85rem; margin-bottom: 1rem; display: flex; gap: 0.5rem; align-items: center; }
+    </style>
+  </head>
+  <body data-page="home">
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="./index.html">HFOI</a>
+        <nav class="nav">
+          <a data-nav="home" href="./index.html">首页</a>
+          <a data-nav="players" href="./hfoi-players.html">选手</a>
+          <a data-nav="schools" href="./hfoi-schools.html">学校</a>
+          <a data-nav="contests" href="./hfoi-contests.html">比赛</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container page" style="max-width:800px">
+      <section class="panel">
+        <div id="detailWrapper">
+          <p style="color:hsl(var(--muted-foreground));text-align:center;padding:2rem 0">加载中...</p>
+        </div>
+        <p style="margin-top:1rem"><a class="table-link" href="./index.html">← 返回首页</a></p>
+      </section>
+    </main>
+
+<script>
+      var params = new URLSearchParams(window.location.search);
+      var id = params.get("id") || params.get("id");
+      var el = document.getElementById("detailWrapper");
+
+      if (id) {
+        fetch("./data/announcements/" + encodeURIComponent(id) + ".json")
+          .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+          .then(function(data) {
+            if (data && data.title) {
+              document.title = "HFOI - " + data.title;
+              el.innerHTML = "<h1>" + (data.title) + "</h1><div class=\"detail-meta\"><span>" + (data.date || "") + "</span></div><div class=\"detail-content\">" + (data.content || "") + "</div>";
+            } else {
+              el.innerHTML = "<p style='text-align:center;padding:2rem 0;color:hsl(var(--muted-foreground))'>公告数据格式有误</p>";
+            }
+          })
+          .catch(function() {
+            el.innerHTML = "<p style='text-align:center;padding:2rem 0;color:hsl(var(--muted-foreground))'>公告未找到（" + encodeURIComponent(id || "") + ".json）</p>";
+          });
+      }
+    </script>
+  </body>
+</html>

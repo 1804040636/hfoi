@@ -1,0 +1,51 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HFOI - 选手详情</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="player-detail">
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="./index.html">HFOI</a>
+        <nav class="nav">
+          <a data-nav="home" href="./index.html">首页</a>
+          <a data-nav="players" href="./hfoi-players.html">选手</a>
+          <a data-nav="schools" href="./hfoi-schools.html">学校</a>
+          <a data-nav="contests" href="./hfoi-contests.html">比赛</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container page">
+      <section class="panel">
+        <h1 id="playerDetailTitle">选手详情</h1>
+        <p class="sub"><a class="table-link" href="./hfoi-players.html">返回选手列表</a></p>
+      </section>
+
+      <section class="panel">
+        <div class="summary" id="playerDetailSummary">加载中...</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>比赛</th>
+                <th>奖项</th>
+                <th>排名</th>
+              </tr>
+            </thead>
+            <tbody id="playerDetailBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container footer">
+      <small>静态模板，仅用于自有数据展示。</small>
+    </footer>
+
+    <script src="./site.js" defer></script>
+  </body>
+</html>

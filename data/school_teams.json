@@ -1,0 +1,212 @@
+[
+  {
+    "school": "合肥市稻香村小学教育集团",
+    "level": "primary",
+    "teamFirst": 1,
+    "teamSecond": 0,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市南门小学",
+    "level": "primary",
+    "teamFirst": 1,
+    "teamSecond": 0,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市六安路小学",
+    "level": "primary",
+    "teamFirst": 1,
+    "teamSecond": 0,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市六安路小学翠微分校",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市青年路小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市大通路小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市翠庭园小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市潜山路学校",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市安居苑小学教育集团",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市长江路第二小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市师范附属第四小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市屯溪路小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市师范附属第三小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市蜀山小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市西园新村小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市和平小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市望湖小学",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市梦园小学教育集团",
+    "level": "primary",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市第四十五中学",
+    "level": "middle",
+    "teamFirst": 1,
+    "teamSecond": 0,
+    "teamThird": 0
+  },
+  {
+    "school": "中国科学技术大学附属中学",
+    "level": "middle",
+    "teamFirst": 1,
+    "teamSecond": 0,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市第四十八中学",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市五十中学东校",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市第四十五中学森林城分校",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市五十中学西校",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 1,
+    "teamThird": 0
+  },
+  {
+    "school": "合肥市第四十六中学南校区",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市第四十八中学滨湖校区",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市第四十六中学",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市第三十八中学",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市五十中学新校天鹅湖校区",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  },
+  {
+    "school": "合肥市第四十二中学",
+    "level": "middle",
+    "teamFirst": 0,
+    "teamSecond": 0,
+    "teamThird": 1
+  }
+]

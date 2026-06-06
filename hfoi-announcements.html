@@ -1,0 +1,218 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HFOI - 公告管理</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <style>
+      .ann-form { display: flex; flex-direction: column; gap: 0.8rem; }
+      .ann-form-row { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+      .ann-form-row .field { flex: 1; min-width: 180px; }
+      .ann-form textarea { border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 0.7rem 0.85rem; font-size: 0.9rem; font-family: inherit; resize: vertical; min-height: 80px; background: hsl(var(--card)); color: hsl(var(--foreground)); }
+      .ann-form textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+      .btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 1rem; font-size: 0.85rem; font-weight: 500; border-radius: var(--radius); border: 1px solid hsl(var(--border)); background: hsl(var(--card)); color: hsl(var(--foreground)); cursor: pointer; transition: all 0.15s ease; }
+      .btn:hover { border-color: #3b82f6; color: #3b82f6; }
+      .btn-primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+      .btn-primary:hover { background: #2563eb; color: #fff; }
+      .btn-danger { border-color: #ef4444; color: #ef4444; }
+      .btn-danger:hover { background: #fef2f2; }
+      .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+      .ann-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding: 0.8rem 0; border-bottom: 1px solid hsl(var(--border)); }
+      .ann-item:last-child { border-bottom: none; }
+      .ann-item-info { flex: 1; min-width: 0; }
+      .ann-item-title { font-size: 0.95rem; font-weight: 600; }
+      .ann-item-date { font-size: 0.75rem; color: hsl(var(--muted-foreground)); margin-left: 0.5rem; }
+      .ann-item-summary { font-size: 0.85rem; color: hsl(var(--muted-foreground)); margin-top: 0.25rem; line-height: 1.5; }
+      .ann-item-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+      .json-output { background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: var(--radius); font-family: "Cascadia Code", "Fira Code", monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow: auto; margin: 0.5rem 0; }
+      .empty-state { text-align: center; color: hsl(var(--muted-foreground)); padding: 2rem 0; font-size: 0.9rem; }
+      .flash-msg { position: fixed; top: 1rem; right: 1rem; background: #10b981; color: #fff; padding: 0.6rem 1.2rem; border-radius: var(--radius); font-size: 0.85rem; font-weight: 500; z-index: 999; opacity: 0; transform: translateY(-10px); transition: all 0.25s ease; pointer-events: none; }
+      .flash-msg.show { opacity: 1; transform: translateY(0); }
+      .file-label { font-size: 0.8rem; color: hsl(var(--muted-foreground)); background: hsl(var(--muted)); padding: 0.15rem 0.5rem; border-radius: 4px; font-family: monospace; }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="./index.html">HFOI</a>
+        <nav class="nav">
+          <a data-nav="home" href="./index.html">首页</a>
+          <a data-nav="players" href="./hfoi-players.html">选手</a>
+          <a data-nav="schools" href="./hfoi-schools.html">学校</a>
+          <a data-nav="contests" href="./hfoi-contests.html">比赛</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container page" style="max-width:900px">
+      <section class="panel">
+        <h1>公告管理</h1>
+        <p class="sub">
+          编辑后点击"导出 JSON"，把生成的内容依次复制到对应文件：
+          <code>data/announcements/index.json</code> 和各公告的独立 <code>data/announcements/{id}.json</code>。
+        </p>
+      </section>
+
+      <section class="panel">
+        <h2 style="margin-bottom:0.8rem">添加公告</h2>
+        <div class="ann-form">
+          <div class="ann-form-row">
+            <div class="field">
+              <label for="annTitle">标题</label>
+              <input id="annTitle" type="text" placeholder="公告标题" />
+            </div>
+            <div class="field">
+              <label for="annDate">日期</label>
+              <input id="annDate" type="date" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="annSummary">简介（首页显示，纯文本）</label>
+            <textarea id="annSummary" placeholder="首页显示的摘要..." style="min-height:50px"></textarea>
+          </div>
+          <div class="field">
+            <label for="annContent">详细内容（详情页显示，支持 HTML）</label>
+            <textarea id="annContent" placeholder="<p>完整公告内容...</p>"></textarea>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="addAnnouncement()">＋ 添加</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;flex-wrap:wrap;gap:0.5rem">
+          <h2 style="margin:0">现有公告</h2>
+          <button class="btn" onclick="exportJSON()">📋 导出 JSON</button>
+        </div>
+        <div id="announcementList"><p class="empty-state">暂无公告</p></div>
+      </section>
+
+      <section class="panel" id="jsonPanel" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;flex-wrap:wrap;gap:0.5rem">
+          <h2 style="margin:0">JSON 输出</h2>
+          <button class="btn btn-sm" onclick="stepExport()">逐步导出</button>
+        </div>
+        <div id="jsonOutputArea"></div>
+      </section>
+    </main>
+
+    <div class="flash-msg" id="flashMsg"></div>
+
+    <script>
+      var announcements = [];
+
+      function loadAnnouncements() {
+        var saved = localStorage.getItem("hfoi_anns");
+        if (saved) { try { announcements = JSON.parse(saved); } catch(e) { announcements = []; } }
+        fetch("./data/announcements/index.json")
+          .then(function(r) { if (r.ok) return r.json(); return { items: [] }; })
+          .then(function(data) {
+            if (Array.isArray(data.items) && data.items.length && !announcements.length) {
+              announcements = data.items.map(function(item) {
+                return { id: item.id, title: item.title, date: item.date, summary: item.summary, content: "" };
+              });
+              // Try loading content for each
+              announcements.forEach(function(a) {
+                fetch("./data/announcements/" + encodeURIComponent(a.id) + ".json")
+                  .then(function(r) { if (r.ok) return r.json(); return null; })
+                  .then(function(d) { if (d && d.content) a.content = d.content; renderList(); })
+                  .catch(function() {});
+              });
+            }
+            renderList();
+          })
+          .catch(function() { renderList(); });
+      }
+
+      function save() {
+        localStorage.setItem("hfoi_anns", JSON.stringify(announcements, null, 2));
+      }
+
+      function renderList() {
+        var el = document.getElementById("announcementList");
+        if (!announcements.length) { el.innerHTML = '<p class="empty-state">暂无公告</p>'; return; }
+        el.innerHTML = announcements.map(function(a, i) {
+          var ds = a.date ? '<span class="ann-item-date">' + escapeHtml(a.date) + '</span>' : '';
+          var sm = a.summary ? '<div class="ann-item-summary">' + escapeHtml(a.summary) + '</div>' : '';
+          return '<div class="ann-item"><div class="ann-item-info"><div class="ann-item-title">' + escapeHtml(a.title) + ds + '<span class="file-label" style="margin-left:0.5rem">' + escapeHtml(a.id) + '.json</span></div>' + sm + '</div><div class="ann-item-actions"><button class="btn btn-sm btn-danger" onclick="del(' + i + ')">删除</button></div></div>';
+        }).join("");
+      }
+
+      function addAnnouncement() {
+        var title = document.getElementById("annTitle").value.trim();
+        var date = document.getElementById("annDate").value;
+        var summary = document.getElementById("annSummary").value.trim();
+        var content = document.getElementById("annContent").value.trim();
+        if (!title) { flash("请输入标题"); return; }
+        if (!summary) { flash("请输入简介"); return; }
+        var id = "a" + Date.now();
+        announcements.push({ id: id, title: title, date: date, summary: summary, content: content || "" });
+        save();
+        renderList();
+        document.getElementById("annTitle").value = "";
+        document.getElementById("annDate").value = "";
+        document.getElementById("annSummary").value = "";
+        document.getElementById("annContent").value = "";
+        flash("已添加");
+      }
+
+      function del(i) {
+        if (!confirm("确定删除？")) return;
+        announcements.splice(i, 1);
+        save();
+        renderList();
+        flash("已删除");
+      }
+
+      var exportStep = 0;
+
+      function exportJSON() {
+        document.getElementById("jsonPanel").style.display = "block";
+        document.getElementById("jsonPanel").scrollIntoView({ behavior: "smooth" });
+        exportStep = -1;
+        stepExport();
+      }
+
+      function stepExport() {
+        exportStep++;
+        var area = document.getElementById("jsonOutputArea");
+        if (exportStep === 0) {
+          var idx = { items: announcements.map(function(a) { return { id: a.id, title: a.title, date: a.date, summary: a.summary }; }) };
+          area.innerHTML = '<div style="margin-bottom:0.8rem"><strong style="font-size:0.95rem">步骤 1/2</strong> — 复制到 <code>data/announcements/index.json</code></div><div class="json-output">' + escapeHtml(JSON.stringify(idx, null, 2)) + '</div><button class="btn btn-sm" style="margin-top:0.5rem" onclick="copyText(' + exportStep + ')">📄 复制</button>';
+        } else if (exportStep < announcements.length + 1) {
+          var i = exportStep - 1;
+          var a = announcements[i];
+          var detail = { id: a.id, title: a.title, date: a.date, content: a.content || "<p>" + escapeHtml(a.summary) + "</p>", summary: a.summary };
+          area.innerHTML = '<div style="margin-bottom:0.8rem"><strong style="font-size:0.95rem">步骤 ' + (exportStep + 1) + '/' + (announcements.length + 1) + '</strong> — 复制到 <code>data/announcements/' + escapeHtml(a.id) + '.json</code></div><div class="json-output">' + escapeHtml(JSON.stringify(detail, null, 2)) + '</div><button class="btn btn-sm" style="margin-top:0.5rem" onclick="copyText(' + exportStep + ')">📄 复制</button>';
+        } else {
+          area.innerHTML = '<p style="color:hsl(var(--muted-foreground));text-align:center;padding:1rem 0">✅ 全部导出完成，共 ' + announcements.length + ' 条公告</p>';
+        }
+      }
+
+      function copyText(step) {
+        var area = document.getElementById("jsonOutputArea");
+        var pre = area.querySelector(".json-output");
+        if (!pre) return;
+        navigator.clipboard.writeText(pre.textContent).then(function() {
+          flash("已复制步骤 " + (step + 1));
+        }).catch(function() {
+          flash("复制失败，请手动选择");
+        });
+      }
+
+      function flash(msg) {
+        var el = document.getElementById("flashMsg");
+        el.textContent = msg; el.classList.add("show");
+        setTimeout(function() { el.classList.remove("show"); }, 2000);
+      }
+
+      function escapeHtml(v) {
+        return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#39;");
+      }
+
+      loadAnnouncements();
+    </script>
+  </body>
+</html>

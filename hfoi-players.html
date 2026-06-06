@@ -1,0 +1,60 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HFOI - 选手</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="players">
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="./index.html">HFOI</a>
+        <nav class="nav">
+          <a data-nav="home" href="./index.html">首页</a>
+          <a data-nav="players" href="./hfoi-players.html">选手</a>
+          <a data-nav="schools" href="./hfoi-schools.html">学校</a>
+          <a data-nav="contests" href="./hfoi-contests.html">比赛</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container page">
+      <section class="panel">
+        <h1>选手</h1>
+        <p class="sub">按姓名或学校筛选选手获奖汇总。</p><div class="tab-group" id="playerTabGroup" style="margin-top:0.7rem"><button class="tab-btn active" data-level="all">全部</button><button class="tab-btn" data-level="primary">小学</button><button class="tab-btn" data-level="middle">初中</button></div>
+      </section>
+
+      <section class="panel controls-basic">
+        <div class="field grow">
+          <label for="playerSearchInput">搜索选手（姓名 / 学校）</label>
+          <input id="playerSearchInput" type="search" placeholder="输入姓名或学校关键字" />
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="summary" id="playersSummary">加载中...</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>姓名</th>
+                <th>学校</th>
+                <th>一等奖</th>
+                <th>二等奖</th>
+                <th>三等奖</th>
+                <th>总计</th>
+              </tr>
+            </thead>
+            <tbody id="playersBody"></tbody></table></div><div class="pagination" id="playersPagination"></div>
+      </section>
+    </main>
+
+    <footer class="container footer">
+      <small>静态模板，仅用于自有数据展示。</small>
+    </footer>
+
+    <script src="./site.js" defer></script>
+  </body>
+</html>

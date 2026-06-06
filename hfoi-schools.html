@@ -1,0 +1,64 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HFOI - 学校</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body data-page="schools">
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a class="brand" href="./index.html">HFOI</a>
+        <nav class="nav">
+          <a data-nav="home" href="./index.html">首页</a>
+          <a data-nav="players" href="./hfoi-players.html">选手</a>
+          <a data-nav="schools" href="./hfoi-schools.html">学校</a>
+          <a data-nav="contests" href="./hfoi-contests.html">比赛</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container page">
+      <section class="panel">
+        <h1>学校</h1>
+        <p class="sub">学校团体排名 + 历年获奖总数。</p><div class="tab-group" id="schoolTabGroupPage" style="margin-top:0.7rem"><button class="tab-btn active" data-level="primary">小学</button><button class="tab-btn" data-level="middle">初中</button></div>
+      </section>
+
+      <section class="panel controls-basic">
+        <div class="field grow">
+          <label for="schoolSearchInput">搜索学校</label>
+          <input id="schoolSearchInput" type="search" placeholder="输入学校关键字" />
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="summary" id="schoolsSummary">加载中...</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>学校名</th>
+                <th>团一</th>
+                <th>团二</th>
+                <th>团三</th>
+                <th>一等奖</th>
+                <th>二等奖</th>
+                <th>三等奖</th>
+                <th>总计</th>
+              </tr>
+            </thead>
+            <tbody id="schoolsBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="container footer">
+      <small>静态模板，仅用于自有数据展示。</small>
+    </footer>
+
+    <script src="./site.js" defer></script>
+  </body>
+</html>

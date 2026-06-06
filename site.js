@@ -1,0 +1,555 @@
+﻿function normalize(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function getAwardLevel(award) {
+  const text = normalize(award);
+  if (/一等奖|一等|gold|first|金奖/.test(text)) return 1;
+  if (/二等奖|二等|silver|second|银奖/.test(text)) return 2;
+  if (/三等奖|三等|bronze|third|铜奖/.test(text)) return 3;
+  return 0;
+}
+
+function contestNameOf(row) {
+  return String(row?.contest ?? row?.contestName ?? row?.match ?? "").trim();
+}
+
+function setActiveNav() {
+  const page = document.body.dataset.page;
+  const navKey = page === "contest-detail" ? "contests" : page === "player-detail" ? "players" : page;
+  document.querySelectorAll("[data-nav]").forEach((item) => {
+    item.classList.toggle("active", item.dataset.nav === navKey);
+  });
+}
+
+function renderEmpty(tbody, colspan, text) {
+  tbody.innerHTML = "<tr><td class=\"empty\" colspan=\"" + colspan + "\">" + escapeHtml(text) + "</td></tr>";
+}
+
+async function loadResults() {
+  const response = await fetch("./data/results.json");
+  if (!response.ok) throw new Error("Load results.json failed: " + response.status);
+  const data = await response.json();
+  return Array.isArray(data) ? data : [];
+}
+
+async function loadSchoolTeams() {
+  try {
+    const response = await fetch("./data/school_teams.json");
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+async function loadAnnouncements() {
+  try {
+    const response = await fetch("./data/announcements/index.json");
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data.items) ? data.items : [];
+  } catch {
+    return [];
+  }
+}
+
+function buildPlayerStats(rows) {
+  const map = new Map();
+  rows.forEach((row) => {
+    const key = (row.name || "") + "__" + (row.school || "");
+    if (!map.has(key)) {
+      map.set(key, { name: String(row.name || ""), school: String(row.school || ""), first: 0, second: 0, third: 0, total: 0 });
+    }
+    const item = map.get(key);
+    const lv = getAwardLevel(row.award);
+    if (lv === 1) item.first += 1;
+    if (lv === 2) item.second += 1;
+    if (lv === 3) item.third += 1;
+    item.total += 1;
+  });
+  return [...map.values()].sort(function(a, b) {
+    if (b.total !== a.total) return b.total - a.total;
+    if (b.first !== a.first) return b.first - a.first;
+    if (b.second !== a.second) return b.second - a.second;
+    if (b.third !== a.third) return b.third - a.third;
+    return a.name.localeCompare(b.name, "zh-CN");
+  });
+}
+
+function buildContestStats(rows) {
+  const map = new Map();
+  rows.forEach(function(row) {
+    var key = contestNameOf(row);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, { name: key, first: 0, second: 0, third: 0, total: 0 });
+    var item = map.get(key);
+    var lv = getAwardLevel(row.award);
+    if (lv === 1) item.first += 1;
+    if (lv === 2) item.second += 1;
+    if (lv === 3) item.third += 1;
+    item.total += 1;
+  });
+  return [...map.values()].sort(function(a, b) {
+    if (b.total !== a.total) return b.total - a.total;
+    if (b.first !== a.first) return b.first - a.first;
+    return a.name.localeCompare(b.name, "zh-CN");
+  });
+}
+
+function getSchoolLevel(school) {
+  var s = normalize(school);
+  if (s.indexOf("中学") !== -1 || s.indexOf("初中") !== -1 || s.indexOf("中") !== -1 && (s.indexOf("一中") !== -1 || s.indexOf("二中") !== -1 || s.indexOf("三中") !== -1 || s.indexOf("四中") !== -1 || s.indexOf("五中") !== -1 || s.indexOf("六中") !== -1 || s.indexOf("七中") !== -1 || s.indexOf("八中") !== -1 || s.indexOf("九中") !== -1 || s.indexOf("十中") !== -1)) {
+    return "middle";
+  }
+  if (s.indexOf("小学") !== -1) {
+    return "primary";
+  }
+  if (s.indexOf("学校") !== -1) {
+    if (s.indexOf("实验") !== -1) return "middle";
+    return "primary";
+  }
+  return "primary";
+}
+
+function buildSchoolStats(rows, teamRows) {
+  var map = new Map();
+  rows.forEach(function(row) {
+    var school = String(row.school || "");
+    if (!school) return;
+    var c = String(row.contest || "").trim();
+    var level = c.indexOf("小学") >= 0 ? "primary" : c.indexOf("初中") >= 0 ? "middle" : getSchoolLevel(school);
+    var key = school + "__" + level;
+    if (!map.has(key)) {
+      map.set(key, { school: school, level: level, teamFirst: 0, teamSecond: 0, teamThird: 0, first: 0, second: 0, third: 0, total: 0 });
+    }
+    var item = map.get(key);
+    var lv = getAwardLevel(row.award);
+    if (lv === 1) item.first += 1;
+    if (lv === 2) item.second += 1;
+    if (lv === 3) item.third += 1;
+    item.total += 1;
+  });
+  teamRows.forEach(function(row) {
+    var school = String(row.school || "");
+    if (!school) return;
+    var teamLevel = String(row.level || "both");
+    map.forEach(function(item, key) {
+      if (key.indexOf(school + "__") === 0 && (teamLevel === "both" || item.level === teamLevel)) {
+        item.teamFirst = Number(row.teamFirst || 0);
+        item.teamSecond = Number(row.teamSecond || 0);
+        item.teamThird = Number(row.teamThird || 0);
+      }
+    });
+    var found = false;
+    map.forEach(function(item, key) { if (key.indexOf(school + "__") === 0 && (teamLevel === "both" || item.level === teamLevel)) found = true; });
+    if (!found) {
+      if (teamLevel === "both" || teamLevel === "primary") {
+        map.set(school + "__primary", { school: school, level: "primary", teamFirst: Number(row.teamFirst || 0), teamSecond: Number(row.teamSecond || 0), teamThird: Number(row.teamThird || 0), first: 0, second: 0, third: 0, total: 0 });
+      }
+      if (teamLevel === "both" || teamLevel === "middle") {
+        map.set(school + "__middle", { school: school, level: "middle", teamFirst: Number(row.teamFirst || 0), teamSecond: Number(row.teamSecond || 0), teamThird: Number(row.teamThird || 0), first: 0, second: 0, third: 0, total: 0 });
+      }
+    }
+  });
+  return [...map.values()].sort(function(a, b) {
+    if (b.teamFirst !== a.teamFirst) return b.teamFirst - a.teamFirst;
+    if (b.teamSecond !== a.teamSecond) return b.teamSecond - a.teamSecond;
+    if (b.teamThird !== a.teamThird) return b.teamThird - a.teamThird;
+    if (b.first !== a.first) return b.first - a.first;
+    if (b.second !== a.second) return b.second - a.second;
+    if (b.third !== a.third) return b.third - a.third;
+    return a.school.localeCompare(b.school, "zh-CN");
+  });
+}
+
+// ===== Calendar =====
+function renderCalendar() {
+  var container = document.getElementById("calendarDays");
+  if (!container) return;
+  var now = new Date();
+  var year = now.getFullYear();
+  var month = now.getMonth();
+  var today = now.getDate();
+
+  var firstDay = new Date(year, month, 1).getDay();
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var daysInPrev = new Date(year, month, 0).getDate();
+
+  var label = document.querySelector(".calendar-month-label");
+  if (label) label.textContent = year + " 年 " + (month + 1) + " 月";
+
+  var cells = "";
+  for (var i = 0; i < firstDay; i++) {
+    cells += '<span class="calendar-day other-month">' + (daysInPrev - firstDay + i + 1) + '</span>';
+  }
+  for (var d = 1; d <= daysInMonth; d++) {
+    cells += '<span class="calendar-day' + (d === today ? " today" : "") + '">' + d + '</span>';
+  }
+  var remaining = 42 - (firstDay + daysInMonth);
+  for (var r = 1; r <= remaining && r <= 14; r++) {
+    cells += '<span class="calendar-day other-month">' + r + '</span>';
+  }
+  container.innerHTML = cells;
+}
+
+// ===== Homepage =====
+function renderHome(rows, teamRows, announcements) {
+  var summary = document.getElementById("homeSummary");
+  var rankBody = document.getElementById("homeSchoolRankBody");
+  if (!rankBody) return;
+
+  var players = buildPlayerStats(rows);
+  var contests = buildContestStats(rows);
+  var schools = buildSchoolStats(rows, teamRows);
+
+  // Stats cards
+  var elStudents = document.getElementById("statStudents");
+  var elSchools = document.getElementById("statSchools");
+  var elContests = document.getElementById("statContests");
+  if (elStudents) elStudents.textContent = players.length;
+  if (elSchools) elSchools.textContent = schools.length;
+  if (elContests) elContests.textContent = contests.length;
+
+  // Notices
+  var noticeList = document.getElementById("noticeList");
+  if (noticeList && announcements && announcements.length) {
+    noticeList.innerHTML = announcements.slice(0, 5).map(function(a) {
+      var dateStr = a.date ? '<span class="notice-date">' + escapeHtml(a.date) + '</span>' : "";
+      var summary = a.summary ? escapeHtml(a.summary) : "";
+      return '<div class="notice-item"><div class="notice-title"><a class="notice-link" href="./hfoi-announcement-detail?id=' + encodeURIComponent(a.id) + '">' + escapeHtml(a.title) + '</a></div>' + dateStr + '<p class="notice-content">' + summary + '</p></div>';
+    }).join("");
+  }
+
+  // Calendar
+  renderCalendar();
+
+  // Tab switching
+  var currentLevel = "primary";
+  var tabGroup = document.getElementById("schoolTabGroup");
+  if (tabGroup) {
+    tabGroup.querySelectorAll(".tab-btn").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        tabGroup.querySelectorAll(".tab-btn").forEach(function(b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        currentLevel = btn.getAttribute("data-level");
+        paintSchools(currentLevel);
+      });
+    });
+  }
+
+  function paintSchools(level) {
+    var filtered = schools.filter(function(s) { return s.level === level; }); var list = filtered.slice(0, 10);
+    if (!list.length) {
+      renderEmpty(rankBody, 8, "暂无数据");
+      if (summary) summary.textContent = "共 0 所学校";
+      return;
+    }
+    rankBody.innerHTML = list.map(function(row, idx) {
+      return '<tr><td>' + (idx + 1) + '</td><td>' + escapeHtml(row.school) + '</td><td>' + row.teamFirst + '</td><td>' + row.teamSecond + '</td><td>' + row.teamThird + '</td><td>' + row.first + '</td><td>' + row.second + '</td><td>' + row.third + '</td></tr>';
+    }).join("");
+    if (summary) summary.textContent = "共 " + list.length + " 所学校";
+  }
+
+  paintSchools(currentLevel);
+}
+
+// ===== Players Page =====
+function renderPlayers(rows) {
+  var input = document.getElementById("playerSearchInput");
+  var summary = document.getElementById("playersSummary");
+  var tbody = document.getElementById("playersBody");
+  var pagination = document.getElementById("playersPagination");
+  var tabGroup = document.getElementById("playerTabGroup");
+  if (!input || !summary || !tbody) return;
+
+  var PAGE_SIZE = 50;
+  var currentLevel = "all";
+  var currentRows = rows;
+  var currentList = [];
+
+  function filterByLevel(level, data) {
+    if (level === "all") return data;
+    var isPrimary = level === "primary";
+    return data.filter(function(r) {
+      var c = String(r.contest || "").trim();
+      return isPrimary ? c.indexOf("小学") >= 0 : c.indexOf("初中") >= 0;
+    });
+  }
+
+  function paint(list, page) {
+    currentList = list;
+    if (!page || page < 1) page = 1;
+    var totalPages = Math.ceil(list.length / PAGE_SIZE) || 1;
+    if (page > totalPages) page = totalPages;
+    var start = (page - 1) * PAGE_SIZE;
+    var end = Math.min(start + PAGE_SIZE, list.length);
+    var pageItems = list.slice(start, end);
+    if (!list.length) {
+      renderEmpty(tbody, 7, "No matched players");
+      summary.textContent = "Total 0 players";
+      if (pagination) pagination.innerHTML = "";
+      return;
+    }
+    tbody.innerHTML = pageItems.map(function(row, idx) {
+      var rank = start + idx + 1;
+      return "<tr><td>" + rank + "</td><td>" + "<a class=\"table-link\" href=\"./hfoi-player-detail?name=" + encodeURIComponent(row.name) + "&school=" + encodeURIComponent(row.school) + "\">" + escapeHtml(row.name) + "</a></td><td>" + escapeHtml(row.school) + "</td><td>" + row.first + "</td><td>" + row.second + "</td><td>" + row.third + "</td><td>" + row.total + "</td></tr>";
+    }).join("");
+    summary.textContent = "第 " + page + " / " + totalPages + " 页 | 共 " + list.length + " 名选手";
+    if (pagination) {
+      var html = "";
+      if (page > 1) html += "<button class=\"page-btn\" data-page=\"" + (page - 1) + "\">上一页</button>";
+      for (var p = Math.max(1, page - 2); p <= Math.min(totalPages, page + 2); p++) {
+        html += "<button class=\"page-btn" + (p === page ? " active" : "") + "\" data-page=\"" + p + "\">" + p + "</button>";
+      }
+      if (page < totalPages) html += "<button class=\"page-btn\" data-page=\"" + (page + 1) + "\">下一页</button>";
+      pagination.innerHTML = html;
+      pagination.querySelectorAll(".page-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var p = parseInt(this.getAttribute("data-page"));
+          paint(currentList, p);
+        });
+      });
+    }
+  }
+
+  function refresh() {
+    var keyword = normalize(input.value);
+    currentRows = filterByLevel(currentLevel, rows);
+    var levelRows = currentRows;
+    var searchRows = keyword ? levelRows.filter(function(r) {
+      return normalize(r.name + " " + r.school).indexOf(keyword) !== -1;
+    }) : levelRows;
+    paint(buildPlayerStats(searchRows.length ? searchRows : levelRows), 1);
+  }
+
+  if (tabGroup) {
+    tabGroup.querySelectorAll(".tab-btn").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        tabGroup.querySelectorAll(".tab-btn").forEach(function(b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        currentLevel = btn.getAttribute("data-level");
+        currentRows = filterByLevel(currentLevel, rows);
+        paint(buildPlayerStats(currentRows), 1);
+        input.value = "";
+      });
+    });
+  }
+
+  input.addEventListener("input", function() { refresh(); });
+
+  currentRows = filterByLevel("all", rows);
+  paint(buildPlayerStats(currentRows), 1);
+}
+
+// ===== Schools Page =====
+function renderSchools(rows, teamRows) {
+  var input = document.getElementById("schoolSearchInput");
+  var summary = document.getElementById("schoolsSummary");
+  var tbody = document.getElementById("schoolsBody");
+  var tabGroup = document.getElementById("schoolTabGroupPage");
+  if (!input || !summary || !tbody) return;
+
+  var all = buildSchoolStats(rows, teamRows);
+  var currentLevel = "primary";
+
+  function paint(list) {
+    if (!list.length) {
+      renderEmpty(tbody, 9, "No matched schools");
+      summary.textContent = "Total 0 schools";
+      return;
+    }
+    tbody.innerHTML = list.map(function(row, idx) {
+      return "<tr><td>" + (idx + 1) + "</td><td>" + escapeHtml(row.school) + "</td><td>" + row.teamFirst + "</td><td>" + row.teamSecond + "</td><td>" + row.teamThird + "</td><td>" + row.first + "</td><td>" + row.second + "</td><td>" + row.third + "</td><td>" + row.total + "</td></tr>";
+    }).join("");
+    summary.textContent = "Total " + list.length + " schools";
+  }
+
+  function filterAndPaint(level) {
+    currentLevel = level;
+    paint(all.filter(function(s) { return s.level === level; }));
+  }
+
+  if (tabGroup) {
+    tabGroup.querySelectorAll(".tab-btn").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        tabGroup.querySelectorAll(".tab-btn").forEach(function(b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        filterAndPaint(btn.getAttribute("data-level"));
+        input.value = "";
+      });
+    });
+  }
+
+  function applyFilter() {
+    var keyword = normalize(input.value);
+    var base = all.filter(function(s) { return s.level === currentLevel; });
+    paint(keyword ? base.filter(function(row) { return normalize(row.school).indexOf(keyword) !== -1; }) : base);
+  }
+
+  input.addEventListener("input", applyFilter);
+  filterAndPaint("primary");
+}
+
+// ===== Contests Page =====
+function renderContests(rows) {
+  var input = document.getElementById("contestSearchInput");
+  var summary = document.getElementById("contestsSummary");
+  var tbody = document.getElementById("contestsBody");
+  if (!input || !summary || !tbody) return;
+
+  var all = buildContestStats(rows);
+
+  function paint(list) {
+    if (!list.length) {
+      renderEmpty(tbody, 6, "No matched contests");
+      summary.textContent = "Total 0 contests";
+      return;
+    }
+    tbody.innerHTML = list.map(function(row, idx) {
+      return '<tr><td>' + (idx + 1) + '</td><td><a class="table-link contest-link" data-contest-name="' + escapeHtml(row.name) + '" href="./hfoi-contest-detail?name=' + encodeURIComponent(row.name) + '">' + escapeHtml(row.name) + '</a></td><td>' + row.first + '</td><td>' + row.second + '</td><td>' + row.third + '</td><td>' + row.total + '</td></tr>';
+    }).join("");
+    summary.textContent = "Total " + list.length + " contests";
+
+    document.querySelectorAll(".contest-link").forEach(function(a) {
+      a.addEventListener("click", function() {
+        var name = a.getAttribute("data-contest-name") || "";
+        localStorage.setItem("last_contest_name", name);
+      });
+    });
+  }
+
+  function applyFilter() {
+    var keyword = normalize(input.value);
+    if (!keyword) return paint(all);
+    paint(all.filter(function(row) { return normalize(row.name).indexOf(keyword) !== -1; }));
+  }
+
+  input.addEventListener("input", applyFilter);
+  paint(all);
+}
+
+// ===== Contest Detail Page =====
+function renderContestDetail(rows) {
+  var title = document.getElementById("detailTitle");
+  var summary = document.getElementById("detailSummary");
+  var tbody = document.getElementById("detailBody");
+  if (!title || !summary || !tbody) return;
+
+  var params = new URLSearchParams(window.location.search);
+  var fromUrl = String(params.get("name") || params.get("contest") || "").trim();
+  var fromStorage = String(localStorage.getItem("last_contest_name") || "").trim();
+  var contestName = fromUrl || fromStorage;
+
+  var uniqueContests = [...new Set(rows.map(contestNameOf).filter(Boolean))];
+  if (!contestName && uniqueContests.length === 1) contestName = uniqueContests[0];
+
+  title.textContent = contestName ? "比赛详情: " + contestName : "比赛详情";
+
+  if (!contestName) {
+    renderEmpty(tbody, 5, "Missing contest name");
+    summary.textContent = "请从比赛列表进入";
+    return;
+  }
+
+  function compact(text) { return normalize(text).replace(/\s+/g, ""); }
+  var target = compact(contestName);
+  var list = rows.filter(function(row) { return compact(contestNameOf(row)) === target; });
+  if (list.length === 0) {
+    list = rows.filter(function(row) { return normalize(contestNameOf(row)).indexOf(normalize(contestName)) !== -1; });
+  }
+
+  list.sort(function(a, b) {
+    if ((b.year || 0) !== (a.year || 0)) return (b.year || 0) - (a.year || 0);
+    return Number(a.rank || 99999) - Number(b.rank || 99999);
+  });
+
+  if (!list.length) {
+    renderEmpty(tbody, 5, "暂无排名记录");
+    summary.textContent = "共 0 条记录";
+    return;
+  }
+
+  tbody.innerHTML = list.map(function(row) {
+    return '<tr><td>' + escapeHtml(row.rank) + '</td><td>' + '<a class="table-link" href="./hfoi-player-detail?name=' + encodeURIComponent(row.name) + '&school=' + encodeURIComponent(row.school) + '">' + escapeHtml(row.name) + '</a></td><td>' + escapeHtml(row.school) + '</td><td>' + escapeHtml(row.award) + '</td><td>' + escapeHtml(row.year) + '</td></tr>';
+  }).join("");
+  summary.textContent = "共 " + list.length + " 条记录";
+}
+
+// ===== Player Detail =====
+function renderPlayerDetail(rows) {
+  var title = document.getElementById("playerDetailTitle");
+  var summary = document.getElementById("playerDetailSummary");
+  var tbody = document.getElementById("playerDetailBody");
+  if (!title || !summary || !tbody) return;
+
+  var params = new URLSearchParams(window.location.search);
+  var name = String(params.get("name") || "").trim();
+  var school = String(params.get("school") || "").trim();
+
+  if (!name) {
+    renderEmpty(tbody, 3, "Missing player name");
+    summary.textContent = "请从选手列表进入";
+    return;
+  }
+
+  var n = function(v) { return String(v || "").trim().toLowerCase(); };
+  var list = rows.filter(function(row) {
+    var matchName = n(row.name) === n(name);
+    if (school) return matchName && n(row.school).indexOf(n(school)) !== -1;
+    return matchName;
+  });
+
+  if (!list.length) {
+    renderEmpty(tbody, 3, "暂无该选手记录");
+    summary.textContent = "共 0 条记录";
+    return;
+  }
+
+  title.textContent = list[0].name + (list[0].school ? " - " + list[0].school : "");
+
+  list.sort(function(a, b) {
+    return Number(a.rank || 99999) - Number(b.rank || 99999);
+  });
+
+  tbody.innerHTML = list.map(function(row) {
+    var cname = contestNameOf(row);
+    var contestLink = '<a class="table-link" href="./hfoi-contest-detail?name=' + encodeURIComponent(cname) + '">' + escapeHtml(cname) + '</a>';
+    return '<tr><td>' + contestLink + '</td><td>' + escapeHtml(row.award) + '</td><td>' + escapeHtml(row.rank) + '</td></tr>';
+  }).join("");
+  summary.textContent = "共 " + list.length + " 条记录";
+}
+
+// ===== Init =====
+async function init() {
+  setActiveNav();
+  try {
+    var rows, teamRows;
+    var data = await Promise.all([loadResults(), loadSchoolTeams(), loadAnnouncements()]);
+    rows = data[0];
+    teamRows = data[1];
+    var announcements = data[2];
+    var page = document.body.dataset.page;
+    if (page === "home") renderHome(rows, teamRows, announcements);
+    if (page === "players") renderPlayers(rows);
+    if (page === "schools") renderSchools(rows, teamRows);
+    if (page === "contests") renderContests(rows);
+    if (page === "contest-detail") renderContestDetail(rows); if (page === "player-detail") renderPlayerDetail(rows);
+  } catch (error) {
+    console.error(error);
+    document.querySelectorAll("tbody").forEach(function(tbody) { renderEmpty(tbody, 10, "数据加载失败"); });
+    document.querySelectorAll(".summary").forEach(function(node) { node.textContent = "数据文件加载失败"; });
+  }
+}
+
+init();
