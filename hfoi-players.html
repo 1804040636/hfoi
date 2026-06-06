@@ -33,8 +33,8 @@
       </section>
 
       <section class="panel">
-        <div class="summary" id="playersSummary">加载中...</div>
-        <div class="table-wrap">
+        <div class="summary" id="playersSummary"></div>
+        <div class="table-wrap" id="playersTableWrap" style="display:none">
           <table>
             <thead>
               <tr>
@@ -47,7 +47,10 @@
                 <th>总计</th>
               </tr>
             </thead>
-            <tbody id="playersBody"></tbody></table></div><div class="pagination" id="playersPagination"></div>
+            <tbody id="playersBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="playersPagination" style="display:none"></div>
       </section>
     </main>
 
@@ -55,6 +58,6 @@
       <small>静态模板，仅用于自有数据展示。</small>
     </footer>
 
-    <script src="./site.js" defer></script>
+    <script src="./site.js?v=20260215a" defer></script>
   </body>
 </html>

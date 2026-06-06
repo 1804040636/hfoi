@@ -23,9 +23,13 @@
       <section class="panel">
         <h1 id="detailTitle">比赛详情</h1>
         <p class="sub"><a class="table-link" href="./hfoi-contests.html">返回比赛列表</a></p>
+        <div class="tab-group" id="contestDetailTabGroup" style="margin-top:0.7rem">
+          <button class="tab-btn active" data-tab="players">选手奖项</button>
+          <button class="tab-btn" data-tab="schools">学校奖项</button>
+        </div>
       </section>
 
-      <section class="panel">
+      <section class="panel" id="contestPlayersPanel">
         <div class="summary" id="detailSummary">加载中...</div>
         <div class="table-wrap">
           <table>
@@ -42,12 +46,30 @@
           </table>
         </div>
       </section>
+
+      <section class="panel" id="contestSchoolsPanel" style="display:none">
+        <div class="summary" id="schoolAwardSummary">加载中...</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>学校</th>
+                <th>团体一等奖</th>
+                <th>团体二等奖</th>
+                <th>团体三等奖</th>
+              </tr>
+            </thead>
+            <tbody id="schoolAwardBody"></tbody>
+          </table>
+        </div>
+      </section>
     </main>
 
     <footer class="container footer">
       <small>静态模板，仅用于自有数据展示。</small>
     </footer>
 
-    <script src="./site.js?v=20260212b" defer></script>
+    <script src="./site.js?v=20260214a" defer></script>
   </body>
 </html>
