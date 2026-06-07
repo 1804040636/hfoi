@@ -618,7 +618,7 @@ function renderContestDetail(rows, teamRows) {
   switchTab("players");
 }
 // ===== Player Detail =====
-function renderPlayerDetail(rows) {
+function renderPlayerDetail(rows, profiles) {
   var title = document.getElementById("playerDetailTitle");
   var summary = document.getElementById("playerDetailSummary");
   var tbody = document.getElementById("playerDetailBody");
@@ -647,7 +647,26 @@ function renderPlayerDetail(rows) {
     return;
   }
 
-  title.textContent = list[0].name + (list[0].school ? " - " + list[0].school : "");
+    title.textContent = list[0].name + (list[0].school ? " - " + list[0].school : "");
+
+  // Show player profile if available
+  var profilePanel = document.getElementById("playerProfilePanel");
+  if (profilePanel && profiles && profiles.length) {
+    var playerId = String(list[0].id || "");
+    var found = false;
+    profiles.forEach(function(p) {
+      if (String(p.id || "") === playerId) {
+        found = true;
+        var elLuogu = document.getElementById("profileLuogu");
+        var elCF = document.getElementById("profileCF");
+        var elAtCoder = document.getElementById("profileAtCoder");
+        if (elLuogu) elLuogu.innerHTML = p.luogu ? '<a class="table-link" href="https://www.luogu.com.cn/user/' + encodeURIComponent(p.luogu) + '" target="_blank" rel="noopener">' + escapeHtml(p.luogu) + '</a>' : "-";
+        if (elCF) elCF.innerHTML = p.codeforces ? '<a class="table-link" href="https://codeforces.com/profile/' + encodeURIComponent(p.codeforces) + '" target="_blank" rel="noopener">' + escapeHtml(p.codeforces) + '</a>' : "-";
+        if (elAtCoder) elAtCoder.innerHTML = p.atcoder ? '<a class="table-link" href="https://atcoder.jp/users/' + encodeURIComponent(p.atcoder) + '" target="_blank" rel="noopener">' + escapeHtml(p.atcoder) + '</a>' : "-";
+      }
+    });
+    profilePanel.style.display = found ? "" : "none";
+  }
 
   list.sort(function(a, b) {
     return Number(a.rank || 99999) - Number(b.rank || 99999);
@@ -757,20 +776,32 @@ function renderSchoolDetail(rows, teamRows) {
 }
 
 // ===== Init =====
+
+async function loadPlayerProfiles() {
+  try {
+    const response = await fetch("./data/player_profiles.json");
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
 async function init() {
   setActiveNav();
   try {
-    var rows, teamRows;
-    var data = await Promise.all([loadResults(), loadSchoolTeams(), loadAnnouncements()]);
+    var rows, teamRows, profiles;
+    var data = await Promise.all([loadResults(), loadSchoolTeams(), loadAnnouncements(), loadPlayerProfiles()]);
     rows = data[0];
     teamRows = data[1];
     var announcements = data[2];
+    profiles = data[3];
     var page = document.body.dataset.page;
     if (page === "home") renderHome(rows, teamRows, announcements);
     if (page === "players") renderPlayers(rows);
     if (page === "schools") renderSchools(rows, teamRows);
     if (page === "contests") renderContests(rows);
-    if (page === "contest-detail") renderContestDetail(rows, teamRows); if (page === "player-detail") renderPlayerDetail(rows); if (page === "school-detail") renderSchoolDetail(rows, teamRows);
+    if (page === "contest-detail") renderContestDetail(rows, teamRows); if (page === "player-detail") renderPlayerDetail(rows, profiles); if (page === "school-detail") renderSchoolDetail(rows, teamRows);
   } catch (error) {
     console.error(error);
     document.querySelectorAll("tbody").forEach(function(tbody) { renderEmpty(tbody, 10, "数据加载失败"); });
